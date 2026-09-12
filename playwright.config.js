@@ -2,33 +2,43 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
 
+    // Test folder
     testDir: './tests',
 
-    timeout: 60000,
-
-    expect: {
-        timeout: 10000
-    },
-
+    // Run tests
     fullyParallel: false,
 
+    // Fail CI if test.only is used
+    forbidOnly: !!process.env.CI,
+
+    // Retry failed tests
+    retries: process.env.CI ? 2 : 0,
+
+    // Run one test at a time
+    workers: 1,
+
+    // Reporter
     reporter: 'html',
 
+    // Global test settings
     use: {
 
+        // Show browser while testing
         headless: false,
 
-        screenshot: 'off',
+        // Screenshot for every test
+        screenshot: 'on',
 
+        // Record video for every test
         video: 'on',
 
-        trace: 'on-first-retry',
+        // Trace on first retry
+        trace: 'on-first-retry'
 
-        actionTimeout: 15000,
-
-        navigationTimeout: 60000
     },
 
+
+    // Browser projects
     projects: [
 
         {

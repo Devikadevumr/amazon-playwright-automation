@@ -17,10 +17,10 @@ class AmazonHomePage {
             '.s-main-slot'
         );
 
-        // First product
-        this.firstProduct = page.locator(
-            '.a-link-normal.s-no-outline'
-        ).first();
+        // Product links
+        this.productLinks = page.locator(
+            'a.a-link-normal.s-no-outline'
+        );
     }
 
 
@@ -51,70 +51,123 @@ class AmazonHomePage {
             timeout: 30000
         });
 
-        // Clear previous text
+        // Clear search box
         await this.searchBox.fill('');
 
-        // Search product
+        // Enter product
         await this.searchBox.fill(product);
 
         // Press Enter
         await this.searchBox.press('Enter');
 
-        // Wait for navigation
+        // Wait for search page navigation
         await this.page.waitForLoadState(
-            'domcontentloaded'
+            'domcontentloaded',
+            {
+                timeout: 60000
+            }
         ).catch(() => {});
 
-        // Wait for search result container
-        await this.searchResults.waitFor({
-            state: 'visible',
-            timeout: 60000
-        });
+        // Wait for URL to contain search page
+        await this.page.waitForURL(
+            /amazon\.in\/s/,
+            {
+                timeout: 60000
+            }
+        ).catch(() => {});
 
-        // Wait for first product
-        await this.firstProduct.waitFor({
-            state: 'visible',
-            timeout: 30000
-        });
+        // Wait for Amazon dynamic content
+        await this.page.waitForTimeout(3000);
+
+        // Check whether page is still open
+        if (this.page.isClosed()) {
+
+            throw new Error(
+                `Page was closed while searching for ${product}`
+            );
+        }
+
+        // Check search results visibility
+        const resultsVisible =
+            await this.searchResults
+                .isVisible()
+                .catch(() => false);
+
+        // Wait if search results are not visible yet
+        if (!resultsVisible) {
+
+            await this.searchResults.waitFor({
+                state: 'visible',
+                timeout: 30000
+            });
+        }
+
+        // Wait for product links
+        await this.productLinks
+            .first()
+            .waitFor({
+                state: 'visible',
+                timeout: 30000
+            });
     }
 
 
-    // Click first product
+    // Click first usable product
     async clickFirstProduct() {
 
-        const context = this.page.context();
+        const productCount =
+            await this.productLinks.count();
 
-        const pagesBefore =
-            context.pages().length;
+        for (
+            let i = 0;
+            i < productCount;
+            i++
+        ) {
 
-        // Click product
-        await this.firstProduct.click();
+            const product =
+                this.productLinks.nth(i);
 
-        // Wait a little for navigation or popup
-        await this.page.waitForTimeout(1500);
+            // Check if visible
+            const visible =
+                await product
+                    .isVisible()
+                    .catch(() => false);
 
-        const pagesAfter =
-            context.pages();
+            if (!visible) {
+                continue;
+            }
 
-        // If a new tab opened
-        if (pagesAfter.length > pagesBefore) {
+            // Get product URL
+            const productUrl =
+                await product.getAttribute('href');
 
-            const newPage =
-                pagesAfter[pagesAfter.length - 1];
+            // Skip invalid links
+            if (
+                !productUrl ||
+                productUrl.includes('/sspa/click')
+            ) {
+                continue;
+            }
 
-            await newPage.waitForLoadState(
-                'domcontentloaded'
-            ).catch(() => {});
+            // Open product directly
+            await this.page.goto(
+                new URL(
+                    productUrl,
+                    'https://www.amazon.in'
+                ).href,
+                {
+                    waitUntil: 'domcontentloaded',
+                    timeout: 60000
+                }
+            );
 
-            return newPage;
+            return this.page;
         }
 
-        // Product opened in same tab
-        await this.page.waitForLoadState(
-            'domcontentloaded'
-        ).catch(() => {});
-
-        return this.page;
+        // If no product found
+        throw new Error(
+            'No usable product was found'
+        );
     }
 }
 

@@ -1,26 +1,29 @@
 class AmazonCartPage {
 
     constructor(page) {
+
         this.page = page;
 
-        // Cart page heading
+        // Cart heading
         this.cartHeading = page
-            .getByText(/Shopping Cart|Your Amazon Cart/)
+            .getByText(
+                /Shopping Cart|Your Amazon Cart/
+            )
             .first();
 
-        // Cart items
+        // Active cart items
         this.cartItems = page.locator(
             '[data-itemtype="active"]'
         );
 
-        // Alternative cart content locator
+        // Cart content
         this.cartContent = page.locator(
             '#sc-active-cart'
         );
     }
 
 
-    // Verify cart page is opened
+    // Verify cart page loaded
     async verifyCartPage() {
 
         await this.page.waitForLoadState(
@@ -29,7 +32,7 @@ class AmazonCartPage {
     }
 
 
-    // Verify cart contains products
+    // Verify cart has products
     async verifyCartHasProducts() {
 
         const cartContentVisible =
@@ -40,7 +43,6 @@ class AmazonCartPage {
         if (cartContentVisible) {
 
             return true;
-
         }
 
         const itemCount =
@@ -48,6 +50,7 @@ class AmazonCartPage {
 
         return itemCount > 0;
     }
+
 }
 
 
