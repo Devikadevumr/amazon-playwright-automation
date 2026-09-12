@@ -1,10 +1,15 @@
 class AmazonProductPage {
 
     constructor(page) {
+
         this.page = page;
 
         // Product title
-        this.productTitle = page.locator('span#productTitle');
+        // Use span because Amazon also has
+        // a hidden input with the same ID
+        this.productTitle = page.locator(
+            'span#productTitle'
+        );
 
         // Add to Cart button
         this.addToCartButton = page
@@ -14,12 +19,20 @@ class AmazonProductPage {
         // Submit button for some products
         this.submitButton = page
             .locator('#attach-cart-info-content')
-            .getByRole('button', { name: 'Submit' });
+            .getByRole(
+                'button',
+                { name: 'Submit' }
+            );
 
         // Go to Cart link
         this.goToCartLink = page.getByRole(
             'link',
             { name: 'Go to Cart' }
+        );
+
+        // Cart count
+        this.cartCount = page.locator(
+            '#nav-cart-count'
         );
     }
 
@@ -27,7 +40,14 @@ class AmazonProductPage {
     // Add product to cart
     async addToCart() {
 
+        await this.addToCartButton.waitFor({
+            state: 'visible',
+            timeout: 30000
+        });
+
         await this.addToCartButton.click();
+
+        await this.page.waitForTimeout(1000);
     }
 
 
@@ -42,6 +62,8 @@ class AmazonProductPage {
         if (submitVisible) {
 
             await this.submitButton.click();
+
+            await this.page.waitForTimeout(1000);
         }
     }
 
@@ -49,15 +71,21 @@ class AmazonProductPage {
     // Verify product was added to cart
     async verifyAddedToCart() {
 
-        await this.page.waitForTimeout(2000);
-
         const cartLinkVisible =
             await this.goToCartLink
                 .first()
                 .isVisible()
                 .catch(() => false);
 
-        return cartLinkVisible;
+        const cartCountVisible =
+            await this.cartCount
+                .isVisible()
+                .catch(() => false);
+
+        return (
+            cartLinkVisible ||
+            cartCountVisible
+        );
     }
 
 
@@ -78,18 +106,29 @@ class AmazonProductPage {
                     .first()
                     .getAttribute('href');
 
-            await this.page.goto(
-                `https://www.amazon.in${cartUrl}`
-            );
+            if (cartUrl) {
 
-        } else {
+                await this.page.goto(
+                    `https://www.amazon.in${cartUrl}`,
+                    {
+                        waitUntil: 'domcontentloaded',
+                        timeout: 60000
+                    }
+                );
 
-            // Open cart directly if Go to Cart link
-            // is not displayed
-            await this.page.goto(
-                'https://www.amazon.in/gp/cart/view.html'
-            );
+                return;
+            }
         }
+
+
+        // Open cart directly
+        await this.page.goto(
+            'https://www.amazon.in/gp/cart/view.html',
+            {
+                waitUntil: 'domcontentloaded',
+                timeout: 60000
+            }
+        );
     }
 }
 

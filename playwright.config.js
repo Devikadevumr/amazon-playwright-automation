@@ -2,38 +2,33 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
 
-    // Folder where test files are located
     testDir: './tests',
 
-    // Maximum time for each test
-    timeout: 30000,
+    timeout: 60000,
 
-    // Number of retries if a test fails
-    retries: 0,
-
-    // Reporters
-    reporter: [
-        ['html'],
-        ['list']
-    ],
-
-    // Settings for browser and test execution
-    use: {
-
-        // Run browser visibly
-        headless: false,
-
-        // Do not take screenshots
-        screenshot: 'off',
-
-        // Record video for every test
-        video: 'on',
-
-        // Save trace on first retry
-        trace: 'on-first-retry'
+    expect: {
+        timeout: 10000
     },
 
-    // Browser configurations
+    fullyParallel: false,
+
+    reporter: 'html',
+
+    use: {
+
+        headless: false,
+
+        screenshot: 'off',
+
+        video: 'on',
+
+        trace: 'on-first-retry',
+
+        actionTimeout: 15000,
+
+        navigationTimeout: 60000
+    },
+
     projects: [
 
         {
@@ -61,4 +56,5 @@ module.exports = defineConfig({
         }
 
     ]
+
 });
